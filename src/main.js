@@ -33,6 +33,7 @@ class Block {
         }
 
         console.log('Block Mined: ' + this.hash);
+        console.log('Nonce was calculated: ' + this.nonce + ' times');
     }
 }
 
@@ -43,7 +44,7 @@ class BlockChain {
         this.chain = [this.createGenesisBlock()];
         this.difficulty = 4;
         this.pendingTransactions = [];
-        this.miningReward = 100;
+        this.miningReward = 10;
     }
 
     createGenesisBlock() {
@@ -54,25 +55,22 @@ class BlockChain {
         return this.chain[this.chain.length - 1];
     }
 
-    // addBlock(newBlock) {
-    //     newBlock.previousHash = this.getLatestBlock().hash;
-    //     // newBlock.hash = newBlock.calculateHash();
-    //     newBlock.mineBlock(this.difficulty);
-
-    //     this.chain.push(newBlock);
-    // }
-
     minePendingTransactions(mineRewardAddress) {
-        let block = new Block(Date.now(), this.pendingTransactions);
-        block.mineBlock(this.difficulty);
+        console.log('\n Starting the miner..');
 
-        console.log('Block successfully mined..');
-        this.chain.push(block);
+        if(this.pendingTransactions.length > 1 || this.chain.length == 1) {
+            let block = new Block(Date.now(), this.pendingTransactions, this.getLatestBlock().hash);
+            block.mineBlock(this.difficulty);
 
-        // this.pendingTransactions = [];
-        this.pendingTransactions = [
-            new Transaction(null, mineRewardAddress, this.miningReward)
-        ];
+            console.log('Block successfully mined..');
+            this.chain.push(block);
+
+            // this.pendingTransactions = [];
+            this.pendingTransactions = [
+                new Transaction(null, mineRewardAddress, this.miningReward)
+            ];
+        } else console.log("----No Transaction created: Bad Request.----");
+        
     }
 
     createTransaction(transaction) {
@@ -97,9 +95,16 @@ class BlockChain {
     }
 
     isChainValid() {
-        for(let i=1; i<this.chain.length - 1; i++) {
+        console.log("\n\nValidating Chain");
+        for(let i=1; i<this.chain.length; i++) {
             const currentBlock = this.chain[i];
             const previousBlock = this.chain[i-1];
+
+            console.log("\n--------- block"+(i+1)+" ---------");
+            console.log("currentBlock.hash: " + currentBlock.hash);
+            console.log("currentBlock.calculateHash(): " + currentBlock.calculateHash());
+            console.log("currentBlock.previousHash: " + currentBlock.previousHash);
+            console.log("previousBlock.hash: " + previousBlock.hash);
 
             if(currentBlock.hash !== currentBlock.calculateHash()) {
                 return false;
@@ -113,34 +118,43 @@ class BlockChain {
     }
 }
 
+// The birth of CRYPTO-CURRENCY
 let sonaCoin = new BlockChain();
 
-sonaCoin.createTransaction(new Transaction("address1", "address2", 100));
+// Transaction1 - Creates block2
+sonaCoin.createTransaction(new Transaction("address1", "Rish-address", 100));
+sonaCoin.minePendingTransactions('Rish-address');
+
+// Check failure of MiningTransactions when no actual transactions exist
+sonaCoin.minePendingTransactions('Rish-address');
+// MiningRewards are recorded as pending-transactions and are distributed when next transaction happens
+console.log('\nBalance of Rish is: ' + sonaCoin.getBalanceOfAddress('Rish-address'));
+
+// Transaction2 - Creates block3
+sonaCoin.createTransaction(new Transaction("Rish-address", "address1", 50));
+sonaCoin.minePendingTransactions('Rish-address');
+console.log('\nBalance of Rish is: ' + sonaCoin.getBalanceOfAddress('Rish-address'));
+
+
+// Transaction3 - Creates block3
 sonaCoin.createTransaction(new Transaction("address2", "address1", 50));
+sonaCoin.minePendingTransactions('Rish-address');
+console.log('\nBalance of Rish is: ' + sonaCoin.getBalanceOfAddress('Rish-address'));
 
-console.log('\n Starting the miner..');
-sonaCoin.minePendingTransactions('Rishi-address');
+console.log('\nIs BlockChain valid? ' + sonaCoin.isChainValid());
 
-console.log('\nBalance of Rishi is: ' + sonaCoin.getBalanceOfAddress('Rishi-address'));
-
-console.log('\n Starting the miner again..');
-sonaCoin.minePendingTransactions('Rishi-address');
+sonaCoin.minePendingTransactions('Rish-address');
 
 
-console.log('\nBalance of Rishi is: ' + sonaCoin.getBalanceOfAddress('Rishi-address'));
-
-// console.log('Mining block1...');
-// sonaCoin.addBlock(new Block(1, Date.now().toString(), {amount: 500}));
-
-// console.log('Mining block2...');
-// sonaCoin.addBlock(new Block(2, Date.now().toString(), {amount: 100}));
-
-// console.log('Mining block3...');
-// sonaCoin.addBlock(new Block(3, Date.now().toString(), {amount: 200}));
-
-// console.log('Is BlockChain valid? ' + sonaCoin.isChainValid());
-
+console.log("\n\n\n----Tampering blockchain----")
+// Example1 - Tampering amount
 // sonaCoin.chain[1].transactions = {amount: 1000};
-// sonaCoin.chain[1].hash = sonaCoin.chain[1].calculateHash();
-// console.log('Is BlockChain valid? ' + sonaCoin.isChainValid());
-// console.log(JSON.stringify(sonaCoin, null, 4));
+
+
+// Example2 - Tampering amount and recalculating hash
+sonaCoin.chain[1].transactions = {amount: 1000};
+sonaCoin.chain[1].hash = sonaCoin.chain[1].calculateHash();
+
+
+
+console.log('\nIs BlockChain valid? ' + sonaCoin.isChainValid());
